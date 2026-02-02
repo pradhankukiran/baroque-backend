@@ -10,8 +10,14 @@ class UsageSnapshotRepository(PostgreSQLRepository):
         super().__init__(adapter, UsageSnapshot, None, None)
 
     def get_by_api_key_date_model(self, api_key_id: str, snapshot_date: date, model: str) -> Optional[UsageSnapshot]:
-        results = self.get_many({"api_key_id": api_key_id, "snapshot_date": snapshot_date, "model": model})
-        return results[0] if results else None
+        query = """
+            SELECT * FROM usage_snapshot
+            WHERE api_key_id = %s AND snapshot_date = %s AND model = %s AND active = true
+        """
+        results = self._execute_within_context(
+            self.adapter.execute_query, query, (api_key_id, snapshot_date, model)
+        )
+        return UsageSnapshot.from_dict(results[0]) if results else None
 
     def get_snapshots_for_period(self, start_date: date, end_date: date, model: Optional[str] = None) -> List[UsageSnapshot]:
         if model:
