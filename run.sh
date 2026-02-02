@@ -50,11 +50,21 @@ echo ""
 echo "Starting containers..."
 echo ""
 
+# Detect docker compose command (plugin or standalone)
+if docker compose version > /dev/null 2>&1; then
+    COMPOSE="docker compose"
+elif command -v docker-compose > /dev/null 2>&1; then
+    COMPOSE="docker-compose"
+else
+    echo "Docker Compose not found. Install docker-compose or the docker compose plugin."
+    exit 1
+fi
+
 # Stop existing containers if running
-docker compose down 2>/dev/null || true
+$COMPOSE down 2>/dev/null || true
 
 # Build and start containers
-docker compose up -d --build
+$COMPOSE up -d --build
 
 echo ""
 echo "Waiting for database to be ready..."
@@ -62,7 +72,7 @@ echo "Waiting for database to be ready..."
 # Wait for database health check (read from .env or use defaults)
 DB_USER=$(grep POSTGRES_USER .env 2>/dev/null | cut -d '=' -f2 || echo "postgres")
 DB_NAME=$(grep POSTGRES_DB .env 2>/dev/null | cut -d '=' -f2 || echo "baroque")
-until docker compose exec -T db pg_isready -U "$DB_USER" -d "$DB_NAME" > /dev/null 2>&1; do
+until $COMPOSE exec -T db pg_isready -U "$DB_USER" -d "$DB_NAME" > /dev/null 2>&1; do
     sleep 1
 done
 
@@ -74,10 +84,10 @@ echo "Waiting for backend to be ready..."
 # Wait for backend to respond
 MAX_ATTEMPTS=30
 ATTEMPT=0
-until curl -s http://localhost:8000/health > /dev/null 2>&1; do
+until curl -s http://localhost:8000/api/health > /dev/null 2>&1; do
     ATTEMPT=$((ATTEMPT + 1))
     if [ $ATTEMPT -ge $MAX_ATTEMPTS ]; then
-        echo "Backend failed to start. Check logs with: docker compose logs backend"
+        echo "Backend failed to start. Check logs with: $COMPOSE logs backend"
         exit 1
     fi
     sleep 1
@@ -91,11 +101,11 @@ echo "  Baroque Backend is running!"
 echo "========================================="
 echo ""
 echo "  API:      http://localhost:8000"
-echo "  Health:   http://localhost:8000/health"
+echo "  Health:   http://localhost:8000/api/health"
 echo "  Docs:     http://localhost:8000/docs"
 echo ""
 echo "  Useful commands:"
-echo "    View logs:     docker compose logs -f"
-echo "    Stop:          docker compose down"
-echo "    Restart:       docker compose restart"
+echo "    View logs:     $COMPOSE logs -f"
+echo "    Stop:          $COMPOSE down"
+echo "    Restart:       $COMPOSE restart"
 echo ""
