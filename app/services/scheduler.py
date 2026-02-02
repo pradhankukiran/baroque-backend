@@ -90,10 +90,11 @@ async def fetch_usage_for_api_key(api_key_id: str, adapter: Optional[PostgreSQLA
     try:
         usage_repo = UsageSnapshotRepository(adapter)
 
-        # Fetch past 7 days to capture historical data (API returns empty for partial days)
+        # Fetch only today (24 hourly buckets = 1 page, no pagination needed)
+        # Historical data accumulates in DB over time for week/month stats
         now_utc = datetime.utcnow()
         today_utc = now_utc.date()
-        starting_at = datetime.combine(today_utc - timedelta(days=7), datetime.min.time())
+        starting_at = datetime.combine(today_utc, datetime.min.time())
         ending_at = datetime.combine(today_utc + timedelta(days=1), datetime.min.time())
 
         usage_data = await client.get_usage_report(
@@ -178,10 +179,11 @@ async def fetch_usage_data():
             return
 
         # Use UTC for consistency with Anthropic API
-        # Fetch past 7 days to capture historical data (API returns empty for partial days)
+        # Fetch only today (24 hourly buckets = 1 page, no pagination needed)
+        # Historical data accumulates in DB over time for week/month stats
         now_utc = datetime.utcnow()
         today_utc = now_utc.date()
-        starting_at = datetime.combine(today_utc - timedelta(days=7), datetime.min.time())
+        starting_at = datetime.combine(today_utc, datetime.min.time())
         ending_at = datetime.combine(today_utc + timedelta(days=1), datetime.min.time())
 
         usage_data = await client.get_usage_report(

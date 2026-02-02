@@ -1,4 +1,5 @@
 import httpx
+import asyncio
 from datetime import datetime, date
 from typing import List, Dict, Any, Optional
 import logging
@@ -75,6 +76,9 @@ class AnthropicAdminClient:
                 next_page = data.get("next_page")
                 if not next_page:
                     break
+
+                # Delay between pagination requests to avoid rate limits
+                await asyncio.sleep(1.0)
 
             logger.info(f"Total: {page_count} pages, {len(all_results)} results")
             return all_results

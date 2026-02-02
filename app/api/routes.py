@@ -67,7 +67,7 @@ async def register_developer(
             )
             developer = dev_repo.save(developer)
 
-        # Fetch usage data immediately so leaderboard shows data right away
+        # Fetch usage data immediately (only 1 API page now, safe for rate limits)
         try:
             fetched_count = await fetch_usage_for_api_key(request.api_key_id)
             logger.info(f"Fetched {fetched_count} usage snapshots on registration for {request.api_key_id[:10]}...")
