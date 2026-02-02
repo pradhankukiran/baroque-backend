@@ -45,7 +45,13 @@ class AnthropicAdminClient:
             response = await self.client.get(url, params=params)
             response.raise_for_status()
             data = response.json()
-            return data.get("data", [])
+            # API returns buckets with nested results, flatten them
+            buckets = data.get("data", [])
+            all_results = []
+            for bucket in buckets:
+                results = bucket.get("results", [])
+                all_results.extend(results)
+            return all_results
         except httpx.HTTPStatusError as e:
             logger.error(f"HTTP error fetching usage report: {e.response.status_code} - {e.response.text}")
             return None
