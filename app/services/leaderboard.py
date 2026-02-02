@@ -62,18 +62,15 @@ def calculate_leaderboard(
     developers = {dev.api_key_id: dev for dev in dev_repo.get_all_active()}
 
     categories = {
-        "power_user": [],
+        "efficient_user": [],
         "cache_champion": [],
         "wordsmith": [],
         "tool_master": [],
     }
 
     for api_key_id, data in aggregated.items():
-        total_tokens = (
-            data["uncached_input_tokens"]
-            + data["cache_read_input_tokens"]
-            + data["output_tokens"]
-        )
+        total_input = data["uncached_input_tokens"] + data["cache_read_input_tokens"]
+        efficiency = round((data["output_tokens"] / total_input) * 100, 2) if total_input > 0 else 0
         cache_rate = calculate_cache_rate(
             data["cache_read_input_tokens"],
             data["uncached_input_tokens"]
@@ -92,7 +89,7 @@ def calculate_leaderboard(
             "is_self": is_self,
         }
 
-        categories["power_user"].append({**base_entry, "value": total_tokens})
+        categories["efficient_user"].append({**base_entry, "value": efficiency})
         categories["cache_champion"].append({**base_entry, "value": cache_rate})
         categories["wordsmith"].append({**base_entry, "value": data["output_tokens"]})
         categories["tool_master"].append({**base_entry, "value": data["web_search_requests"]})
